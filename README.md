@@ -7,10 +7,10 @@ Painel de gerenciamento SSH/Xray com integração nativa ao **Atlas API** (`pain
 
 ---
 
-## 📦 Instalação
+## 📦 Instalação Sem Cache
 
 ```bash
-mkdir -p /root/Painel-Netsimon-4_0-clean && cd /root/Painel-Netsimon-4_0-clean && wget -O install.sh https://raw.githubusercontent.com/miau4/Painel-Netsimon-4_0-clean/main/install.sh && chmod +x install.sh && ./install.sh
+mkdir -p /root/Painel-Netsimon-4_0-clean && cd /root/Painel-Netsimon-4_0-clean && wget -O install.sh "https://raw.githubusercontent.com/miau4/Painel-Netsimon-4_0-clean/main/install.sh?cache=$(date +%s)" && chmod +x install.sh && ./install.sh
 ```
 
 Limpeza prévia (rm -rf): Garante que, se o usuário já tiver uma versão antiga ou um diretório com o mesmo nome, ele será removido antes da instalação para evitar conflitos de arquivos.
