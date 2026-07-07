@@ -304,31 +304,8 @@ screen -dmS limitador bash "$BASE/limit.sh"
 (crontab -l 2>/dev/null | grep -v "limit.sh"; echo "@reboot screen -dmS limitador bash $BASE/limit.sh") | crontab -
 (crontab -l 2>/dev/null | grep -v "boot_check.sh"; echo "@reboot bash $BASE/boot_check.sh") | crontab -
 
-# 10.1 Sincronização Atlas -> Local INDEPENDENTE do limiter.
-#      Antes o sync rodava dentro do loop do limit.sh: se o limiter
-#      fosse desligado (ex.: instabilidade no Xray), o sync parava
-#      junto, mesmo sendo duas coisas sem relação entre si. Agora é
-#      um cron próprio, com flock pra nunca rodar duas instâncias
-#      sobrepostas (a chamada ao Atlas tem timeout de 10s, então pode
-#      acumular se a API estiver lenta). Funciona com o limiter ligado,
-#      desligado, ou nem instalado.
-#!/bin/bash
-EOF
-
 netfilter-persistent save &>/dev/null
 echo -e "${G}OK${NC}"
-
-# 11. Configuração do Atlas API
-echo ""
-echo -e "${Y}╔══════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${Y}╚══════════════════════════════════════════════════════════════╝${NC}"
-echo -e "${W}Para integrar com o painel Atlas em painel.netsimon.fun,${NC}"
-echo -e "${W}informe sua API Key. Você pode configurar depois com a opção 20 do menu.${NC}"
-echo -ne "${C}Cole sua API Key (ou Enter para pular): ${NC}"
-    echo -e "${G}✅ Atlas configurado!${NC}"
-else
-    echo -e "${Y}⚠ Atlas não configurado. Use a opção 20 do menu para configurar.${NC}"
-fi
 
 echo ""
 
