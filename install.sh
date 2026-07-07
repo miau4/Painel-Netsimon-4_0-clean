@@ -44,9 +44,18 @@ echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debcon
 echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
 
 apt update -y &>/dev/null
-apt install -y wget curl jq python3 python3-pip dos2unix nginx \
-    stunnel4 net-tools lsof iptables-persistent screen at &>/dev/null
+apt install -y wget curl jq python3 python3-pip python3-requests dos2unix nginx \
+    stunnel4 net-tools lsof iptables-persistent screen at cron &>/dev/null
 systemctl enable --now atd &>/dev/null
+
+# [PATCH] Garante cron instalado e ativo. Sem isso, o instalador do módulo
+# Atlas (modulosinstall2.sh -> verificador.py) falha silenciosamente ao
+# rodar "crontab -l"/"crontab -" (comando inexistente) e "systemctl restart
+# cron" (unit inexistente). O modulo.py só sobe por acidente nesse cenário,
+# via fallback do próprio verificador.py, mas sem cron de monitoramento.
+# Também adicionamos python3-requests, usado pelo verificador.py e que não
+# estava em nenhuma dependência anterior.
+systemctl enable --now cron &>/dev/null
 echo -e "${G}OK${NC}"
 
 # 3. Nginx na porta 81 (COM SUPORTE A PHP PARA DEVICE CHECK)
