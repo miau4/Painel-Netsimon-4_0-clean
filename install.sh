@@ -144,6 +144,51 @@ for file in "${arquivos[@]}"; do
     fi
 done
 
+# 6.1 Criar script de sincronização (não está no repo original)
+printf "${W}  -> %-20s ${NC}" "sync_usuarios.sh"
+cat > "$BASE/sync_usuarios.sh" << 'SYNC_EOF'
+#!/bin/bash
+SOURCE="/root/usuarios.db"
+TARGET="/etc/painel/usuarios.db"
+[ ! -f "$SOURCE" ] && touch "$SOURCE"
+[ ! -f "$TARGET" ] && touch "$TARGET"
+cp "$TARGET" "$TARGET.bak" 2>/dev/null
+> "$TARGET"
+while IFS=' ' read -r login limite; do
+    [ -z "$login" ] && continue
+    [ -z "$limite" ] && limite=1
+    uuid=$(cat /proc/sys/kernel/random/uuid)
+    expira=$(date -d "+30 days" '+%Y-%m-%d %H:%M:%S')
+    senha="netsimon"
+    echo "$login|$uuid|$expira|$senha|$limite" >> "$TARGET"
+done < "$SOURCE"
+SYNC_EOF
+chmod +x "$BASE/sync_usuarios.sh"
+echo -e "${G}[OK]${NC}"
+
+# 6.2 Criar script de monitoramento (não está no repo original)
+printf "${W}  -> %-20s ${NC}" "monitor_usuarios.sh"
+cat > "$BASE/monitor_usuarios.sh" << 'MONITOR_EOF'
+#!/bin/bash
+TARGET="/root/usuarios.db"
+BACKUP="/root/usuarios.db.bak"
+while true; do
+    for file in /root/*.txt; do
+        [ ! -f "$file" ] && continue
+        [ -f "$TARGET" ] && cp "$TARGET" "$BACKUP"
+        while IFS=' ' read -r login limite; do
+            [ -z "$login" ] && continue
+            [ -z "$limite" ] && limite=1
+            echo "$login $limite" >> "$TARGET"
+        done < "$file"
+        rm "$file" 2>/dev/null
+    done
+    sleep 2
+done
+MONITOR_EOF
+chmod +x "$BASE/monitor_usuarios.sh"
+echo -e "${G}[OK]${NC}"
+
 # 7. Xray
 echo -ne "${W}[+] Instalando Xray... ${NC}"
 bash <(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh) &>/dev/null
@@ -303,6 +348,13 @@ chmod +x /usr/local/bin/menu
 screen -dmS limitador bash "$BASE/limit.sh"
 (crontab -l 2>/dev/null | grep -v "limit.sh"; echo "@reboot screen -dmS limitador bash $BASE/limit.sh") | crontab -
 (crontab -l 2>/dev/null | grep -v "boot_check.sh"; echo "@reboot bash $BASE/boot_check.sh") | crontab -
+
+# 10.1 Sincronização de usuários (monitor + sync)
+echo -ne "${W}[+] Ativando sincronização automática de usuários... ${NC}"
+nohup bash "$BASE/monitor_usuarios.sh" > /var/log/monitor_usuarios.log 2>&1 &
+(crontab -l 2>/dev/null | grep -v "sync_usuarios"; echo "* * * * * root $BASE/sync_usuarios.sh > /dev/null 2>&1") | crontab -
+(crontab -l 2>/dev/null | grep -v "monitor_usuarios"; echo "@reboot nohup bash $BASE/monitor_usuarios.sh > /var/log/monitor_usuarios.log 2>&1 &") | crontab -
+echo -e "${G}OK${NC}"
 
 netfilter-persistent save &>/dev/null
 echo -e "${G}OK${NC}"
